@@ -1,0 +1,6 @@
+.vs
+milcert_spam_add_in/bin
+milcert_spam_add_in/obj
+milcert_spam_add_in/publish
+setup/Debug
+setup/Release

@@ -175,8 +175,8 @@ Public Class Ribbon
                             Continue For
                         End Try
 
-                        ' Phishing email was encrypted, therefore for privacy and confidentiality it cannot be forwarded
-                        If CBool(phishEmailSecurityFlags And Config.reportSecurityFlagsEncrypted) Then
+                        ' Phishing email was encrypted, check if we are trying to decrypt encrypted messages and if we do, decrypt it
+                        If CBool(phishEmailSecurityFlags And Config.reportSecurityFlagsEncrypted) And Not config.handleEncryptedMailitem Then
                             MsgBox(msgBoxEncryptedBody, MsgBoxStyle.OkOnly Or MsgBoxStyle.Exclamation, msgBoxEncryptedTitle)
                             Try
                                 appLog.WriteEntry(msgBoxEncryptedBody, System.Diagnostics.EventLogEntryType.Warning, Config.eventID)
@@ -208,14 +208,6 @@ Public Class Ribbon
                             End Try
                         End If
 
-                        ' Phishing email was encrypted, ' include it decrypted (encrypt & sign)
-                        ' If phishEmailSecurityFlags And Config.reportSecurityFlagsEncrypted Then
-                        ' reportEmail.Body += "Phishing email was encrypted"
-                        ' reportEmail.Importance = Outlook.OlImportance.olImportanceHigh
-                        ' reportEmail.Sensitivity = Outlook.OlSensitivity.olConfidential
-                        ' phishEmail.PropertyAccessor.SetProperty(Config.PR_SECURITY_FLAGS, Config.reportSecurityFlagsNothing)
-                        ' End If
-
                         Dim reportEmail As Outlook.MailItem = CType(Globals.ThisAddIn.Application.CreateItem(Outlook.OlItemType.olMailItem), Outlook.MailItem)
 
                         ' Report email general infos
@@ -228,26 +220,39 @@ Public Class Ribbon
                         reportEmail.DeleteAfterSubmit = True
                         reportEmail.OriginatorDeliveryReportRequested = False
                         reportEmail.ReadReceiptRequested = False
+                        If CBool(phishEmailSecurityFlags And Config.reportSecurityFlagsEncrypted) And config.handleEncryptedMailitem Then
+                            reportEmail.Body += "Phishing email was encrypted"
+                            reportEmail.Importance = Outlook.OlImportance.olImportanceHigh
+                            reportEmail.Sensitivity = Outlook.OlSensitivity.olConfidential
+                        End If
 
                         Try
-                            ' Phishing email contains too many recipients (>100), and thus cannot be forwarded
-                            Dim recipientsCount As Integer = CType(phishEmail, Outlook.MailItem).Recipients.Count
-                            If recipientsCount > 100 Then
-                                MsgBox(String.Format(msgBoxTooManyRecipients, recipientsCount), MsgBoxStyle.OkOnly Or MsgBoxStyle.Exclamation, msgBoxEncryptedTitle)
-                                Try
-                                    appLog.WriteEntry(String.Format(msgBoxTooManyRecipients, recipientsCount), System.Diagnostics.EventLogEntryType.Warning, Config.eventID)
-                                Catch appEx As System.Exception
+                            ' Phishing email contains too many recipients ( > maxNumberOfRecipients), and thus cannot be forwarded
+                            If config.maxNumberOfRecipients > 0 Then
+                                Dim recipientsCount As Integer = CType(phishEmail, Outlook.MailItem).Recipients.Count
+                                If recipientsCount > config.maxNumberOfRecipients Then
+                                    MsgBox(String.Format(msgBoxTooManyRecipients, recipientsCount), MsgBoxStyle.OkOnly Or MsgBoxStyle.Exclamation, msgBoxEncryptedTitle)
+                                    Try
+                                        appLog.WriteEntry(String.Format(msgBoxTooManyRecipients, recipientsCount), System.Diagnostics.EventLogEntryType.Warning, Config.eventID)
+                                    Catch appEx As System.Exception
 
-                                End Try
-                                Continue For
+                                    End Try
+                                    Continue For
+                                End If
                             End If
                         Catch ex As System.Exception
                             ' Recipients count failed
                         End Try
 
                         ' Save and include the phishing mail
-                        CType(phishEmail, Outlook.MailItem).SaveAs(config.spamSavedFilename, Outlook.OlSaveAsType.olMSG)
-                        reportEmail.Attachments.Add(config.spamSavedFilename, Outlook.OlAttachmentType.olEmbeddeditem)
+                        If CBool(phishEmailSecurityFlags And Config.reportSecurityFlagsEncrypted) And config.handleEncryptedMailitem Then
+                            CType(phishEmail, Outlook.MailItem).PropertyAccessor.SetProperty("http://schemas.microsoft.com/mapi/proptag/0x6E010003", 0)
+                            CType(phishEmail, Outlook.MailItem).SaveAs(config.spamSavedFilename, Outlook.OlSaveAsType.olMSG)
+                            reportEmail.Attachments.Add(config.spamSavedFilename, Outlook.OlAttachmentType.olEmbeddeditem)
+                        Else
+                            CType(phishEmail, Outlook.MailItem).SaveAs(config.spamSavedFilename, Outlook.OlSaveAsType.olMSG)
+                            reportEmail.Attachments.Add(config.spamSavedFilename, Outlook.OlAttachmentType.olEmbeddeditem)
+                        End If
 
                         ' Delete phishing email from temp if exist
                         Try

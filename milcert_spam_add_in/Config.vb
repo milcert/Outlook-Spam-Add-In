@@ -57,6 +57,10 @@ Friend Class Config
     Friend Const reportEmailSubject As String = "[SPAM]"
     ' Exception email subject
     Friend Const exceptionEmailSubject As String = "[SPAMx]"
+    ' Define the max number of recipients allowed to be forwarded (-1 = no limit)
+    Friend maxNumberOfRecipients As Integer = -1
+    ' If True try to handle encrypted email
+    Friend handleEncryptedMailitem As Boolean = False
 
     ' Report email security flags &H0=nothing, &H1=encrypted, and &H2=signed 
     Friend Const reportSecurityFlagsNothing = &H0
@@ -103,28 +107,32 @@ Friend Class Config
             ccSecurityTeamSpamBit = CStr(regkey.GetValue("Cc", "spam@domain.ch"))
             filterInternalMessages = CBool(regkey.GetValue("FilterInternalMessages", True))
             regexInteralMessages = CStr(regkey.GetValue("Regex", regexDefault))
+            maxNumberOfRecipients = CInt(regkey.GetValue("MaxNumberOfRecipients", -1))
+            handleEncryptedMailitem = CBool(regkey.GetValue("HandleEncryptedMailItem", False))
         Else
             toSecurityTeamCERT = ""
             ccSecurityTeamSpamBit = "spam@domain.ch"
             filterInternalMessages = True
             regexInteralMessages = regexDefault
+            maxNumberOfRecipients = -1
+            handleEncryptedMailitem = False
         End If
 
-        msgBoxConfirmBodyOneEN = "The selected message will be forwarded to " & ccSecurityTeamSpamBit & " and removed from your inbox. Would you like to continue?"
-        msgBoxConfirmBodyMoreEN = "The {0} selected messages will be forwarded to " & ccSecurityTeamSpamBit & " and removed from your inbox. Would you like to continue?"
-        msgBoxErrorBodyEN = "An error occured, please contact " & toSecurityTeamCERT & " to resolve the issue. The selected message was not forwarded nor deleted from your inbox."
+        msgBoxConfirmBodyOneEN = "Thank you for your contribution to Cyber Security! The selected message will be forwarded to " & ccSecurityTeamSpamBit & " and irrevocably removed from your inbox. Our specialists will take care of it immediately. In case of particularly harmful or dangerous content, you will be contacted personally. Would you like to continue?"
+        msgBoxConfirmBodyMoreEN = "Thank you for your contribution to Cyber Security! The selected {0} message will be forwarded to " & ccSecurityTeamSpamBit & " and irrevocably removed from your inbox. Our specialists will take care of it immediately. In case of particularly harmful or dangerous content, you will be contacted personally. Would you like to continue?"
+        msgBoxErrorBodyEN = "An error occurred! Please contact " & toSecurityTeamCERT & " to resolve the issue. The selected message was not forwarded nor deleted from your inbox."
 
-        msgBoxConfirmBodyOneDE = "Die ausgewählte Nachricht wird an " & ccSecurityTeamSpamBit & " weitergeleitet und vom Posteingang gelöscht. Weiterfahren?"
-        msgBoxConfirmBodyMoreDE = "Die {0} ausgewählten Nachrichten werden an " & ccSecurityTeamSpamBit & " weitergeleitet und vom Posteingang gelöscht. Weiterfahren?"
-        msgBoxErrorBodyDE = "Ein Fehler ist aufgetreten, bitte an " & toSecurityTeamCERT & " melden um den Fehler zu beheben. Die ausgewählte Nachricht wurde weder weitergeleited noch vom Posteingang gelöscht."
+        msgBoxConfirmBodyOneDE = "Besten Dank für Ihren Beitrag zur Cyber-Sicherheit! Die ausgewählte Nachricht wird an " & ccSecurityTeamSpamBit & " weitergeleitet und von Ihrem Posteingang unwiderruflich entfernt. Unsere Spezialisten werden sich umgehend darum kümmern. Bei besonders schädlichem oder gefährlichem Inhalt werden Sie persönlich kontaktiert. Möchten Sie weiterfahren?"
+        msgBoxConfirmBodyMoreDE = "Besten Dank für Ihren Beitrag zur Cyber-Sicherheit! Die ausgewählte {0} Nachricht wird an " & ccSecurityTeamSpamBit & " weitergeleitet und von Ihrem Posteingang unwiderruflich entfernt. Unsere Spezialisten werden sich umgehend darum kümmern. Bei besonders schädlichem oder gefährlichem Inhalt werden Sie persönlich kontaktiert. Möchten Sie weiterfahren?"
+        msgBoxErrorBodyDE = "Ein Fehler ist aufgetreten! Bitte an " & toSecurityTeamCERT & " melden um den Fehler zu beheben. Die ausgewählte Nachricht wurde weder weitergeleited noch vom Posteingang gelöscht."
 
-        msgBoxConfirmBodyOneFR = "Le message sélectionné sera transmis à " & ccSecurityTeamSpamBit & " et supprimé de votre boîte de réception. Voulez-vous continuer ?"
-        msgBoxConfirmBodyMoreFR = "Les {0} messages sélectionnés seront transmis à " & ccSecurityTeamSpamBit & " et supprimés de votre boîte de réception. Voulez-vous continuer ?"
-        msgBoxErrorBodyFR = "Une erreur est survenue, veuillez contacter " & toSecurityTeamCERT & " pour résoudre le problème. Le message sélectionné n'a pas été transmis ni supprimé de votre boîte de réception."
+        msgBoxConfirmBodyOneFR = "Merci pour votre contribution à la cybersécurité! Le message sélectionné sera transmis à " & ccSecurityTeamSpamBit & " et sera irrévocablement supprimé de votre boîte de réception. Nos spécialistes s'en occupent immédiatement. En cas de contenu particulièrement nuisible ou dangereux, vous serez contacté personnellement. Voulez-vous continuer ?"
+        msgBoxConfirmBodyMoreFR = "Merci pour votre contribution à la cybersécurité! Le {0} message sélectionné sera transmis à " & ccSecurityTeamSpamBit & " et sera irrévocablement supprimé de votre boîte de réception. Nos spécialistes s'en occupent immédiatement. En cas de contenu particulièrement nuisible ou dangereux, vous serez contacté personnellement. Voulez-vous continuer ?"
+        msgBoxErrorBodyFR = "Une erreur est survenue! Veuillez contacter " & toSecurityTeamCERT & " pour résoudre le problème. Le message sélectionné n'a pas été transmis ni supprimé de votre boîte de réception."
 
-        msgBoxConfirmBodyOneIT = "L'email selezionata sarà trasmessa a " & ccSecurityTeamSpamBit & " e rimossa della sua inbox. Vuole procedere?"
-        msgBoxConfirmBodyMoreIT = "Le {0} email selezionate sarrano trasmesse a " & ccSecurityTeamSpamBit & " e rimosse della sua inbox. Vuole procedere?"
-        msgBoxErrorBodyIT = "Si è verificato un errore, per favore contatti " & toSecurityTeamCERT & " per risolvere il problema. Lo Spam selezionato non é stato ne trasmesso ne rimosso della sua inbox."
+        msgBoxConfirmBodyOneIT = "Grazie mille per il suo contributo alla cibersicurezza! L'email selezionata sarà irrevocabilmente eliminata dall'inbox e quindi inoltrata a " & ccSecurityTeamSpamBit & ". I nostri specialisti se ne occuperanno immediatamente. Nel caso di un contenuto particolarmente dannoso o pericoloso sarà contattato personalmente. Vuole procedere?"
+        msgBoxConfirmBodyMoreIT = "Grazie mille per il suo contributo alla cibersicurezza! Le {0} email selezionate saranno irrevocabilmente eliminate dall'inbox e quindi inoltrate a " & ccSecurityTeamSpamBit & ". I nostri specialisti se ne occuperanno immediatamente. Nel caso di un contenuto particolarmente dannoso o pericoloso sarà contattato personalmente. Vuole procedere?"
+        msgBoxErrorBodyIT = "Si è verificato un errore! Per favore contatti " & toSecurityTeamCERT & " per annunciare il problema. L'email selezionata non è stata né trasmessa, né rimossa dall'inbox."
 
         If String.IsNullOrEmpty(toSecurityTeamCERT) Then
             msgBoxErrorBodyEN = "An error occured. The selected message was not forwarded nor deleted from your inbox."
